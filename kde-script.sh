@@ -20,10 +20,16 @@ while getopts "hf" opt; do
 done
 
 # Check if alacritty config already exists
-if [[ -d "$HOME/.config/alacritty" ]] && [[ -z "$force_flag" ]]; then
+if [[ -d "$HOME/.config/alacritty" ]]; then
+	if [[ "$force_flag" = true ]]; then;
+		rm -rf "$HOME/.config/alacritty";
+		continue
+	fi
 	echo "[ERROR] $HOME/.config/alacritty is already here. Use -f option to rewrite directory";
 	exit 1;
 fi
+# Remove alacritty config directory
+rm -rf "$HOME/.config/alacritty"
 
 # Create alacritty config directory and change working directory to it
 mkdir "$HOME/.config/alacritty"
@@ -53,13 +59,13 @@ size = 11
 
 # Install all system utilities
 sudo pacman -S --needed --noconfirm bash-completion power-profiles-daemon wl-clipboard zbar zip unzip unrar \
-fastfetch wget dust htop man-db grub-btrfs cronie gvfs timeshift phonon-vlc nano nano-syntax-highlighting bluez bluez-utils
+fastfetch wget dust htop man-db grub-btrfs cronie gvfs timeshift phonon-qt6-vlc nano nano-syntax-highlighting bluez bluez-utils bat
 
 # Install development utilities
 sudo pacman -S --needed --noconfirm linux-headers gcc clang make cmake git
 
 # Install NVIDIA drivers and utilities
-sudo pacman -S --needed --noconfirm nvidia-open nvidia-utils lib32-nvidia-utils libva-nvidia-driver opencl nvtop \
+sudo pacman -S --needed --noconfirm nvidia-open nvidia-utils lib32-nvidia-utils libva-nvidia-driver opencl-nvidia nvtop \
 nvidia-settings nvidia-prime
 
 # Install fonts
@@ -68,7 +74,7 @@ ttf-fira-sans ttf-fira-mono ttf-envycoder-nerd
 
 # Install KDE Plasma
 sudo pacman -S --needed --noconfirm plasma-desktop bluedevil kscreen plasma-nm plasma-pa breeze breeze-gtk \
-kde-cli-tools kde-gtk-config kdecoration kdeplasma-addons kgamma kgobalacceld kinfocenter \
+kde-cli-tools kde-gtk-config kdecoration kdeplasma-addons kgamma kglobalacceld kinfocenter \
 kmenuedit kpipewire kscreenlocker ksystemstats kwayland plasma-browser-integration plasma-disks \
 plasma-integration plasma-systemmonitor plasma-thunderbolt plasma-workspace polkit-kde-agent \
 print-manager spectacle systemsettings xdg-desktop-portal-kde
@@ -89,29 +95,29 @@ sudo pacman -S --needed --noconfirm libreoffice-fresh hunspell hunspell-en_us hu
 # Install other programs
 sudo pacman -S --needed --noconfirm steam telegram-desktop obs-studio snes9x-gtk proton-vpn-gtk-app
 
+# Install SDDM
+sudo pacman -S --needed --noconfirm sddm sddm-kcm qt5-declarative
+
 # Disable generating -debug package in PKGBUILD script
 sudo sed -i '/^OPTIONS=/s/debug/!debug/' /etc/makepkg.conf
 
 # Add fancy look for Pacman
-echo "
-Color
-ILoveCandy
-VerbosePkgLists
-" | sudo tee -a /etc/pacman.conf > /dev/null
+sudo sed -i '/^\[options\]/a Color\nILoveCandy\nVerbosePkgLists' /etc/pacman.conf
 
 # Build and install paru AUR helper
 cd
 git clone https://aur.archlinux.org/paru-bin.git
-cd paru-bin
+cd paru
 makepkg -si --noconfirm
 cd
-rm -rf paru-bin
+rm -rf paru
+sudo pacman -Rns --noconfirm rust
 
 # Enable RemoveMake option in paru config
 sudo sed -i 's/^#RemoveMake/RemoveMake/' /etc/paru.conf
 
 # Install AUR packages
-paru -S kde-thumbnailer-apk raw-thumbnailer zen-browser-bin spotify \
+paru -S --noconfirm --skipreviewkde-thumbnailer-apk raw-thumbnailer zen-browser-bin spotify \
 vesktop-bin zoom obs-backgroundremoval cmatrix-neo-git ttf-ms-fonts \
 downgrade vscodium-bin r2modman-bin
 
@@ -136,10 +142,10 @@ echo "include \"/usr/share/nano/extra/*.nanorc\"" | sudo tee -a /etc/nanorc > /d
 echo "include \"/usr/share/nano-syntax-highlighting/*.nanorc\"" | sudo tee -a /etc/nanorc > /dev/null
 
 # Enable bluetooth
-sudo systemctl enable --now bluetooth.service
+sudo systemctl enable bluetooth.service
 
 # Enable SDDM
-sudo systemctl enable --now sddm.service
+sudo systemctl enable sddm.service
 
 # Ask user to reboot
 read -rp "Setup complete. Reboot now? (y/n):" yn
